@@ -43,17 +43,18 @@
         .notice-link:hover { background: #cc0000; transform: scale(1.03); }
 
         canvas { display: none; }
+        select { padding: 10px; background: #333; color: white; border: 1px solid var(--primary); border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="welcome-modal">
     <div class="modal-content">
-        <h2>🛠️ 製作教學與規範</h2>
+        <h2>🛠️ 製作教學與規範 (4096支援版)</h2>
         <ul>
-            <li><strong>第一部分：</strong> Roblox 天空由六個面組成（上下左右前後）。請確保上傳的圖片為<strong>正方形</strong>，解析度越高越清晰。</li>
-            <li><strong>第二部分：</strong> 檔案命名必須準確，系統裁切後會自動命名為 <code>sky512_dn.tex</code> 等格式。</li>
-            <li><strong>提示：</strong> 您可以下載 Minecraft 1.8.9 的材質包天空進行裁切合成。</li>
+            <li><strong>第一部分：</strong> Roblox 天空由六個面組成。本工具目前支援最高 <strong>4096x4096</strong> 高清輸出。</li>
+            <li><strong>第二部分：</strong> 檔案命名系統會自動處理為 <code>sky512_dn.tex</code>。</li>
+            <li><strong>注意：</strong> 使用 4096 高清圖會增加遊戲載入負擔，建議電腦配備較好者使用。</li>
         </ul>
         <button class="action-btn" onclick="closeModal()" style="width: 100%;">我明白了，開始製作</button>
     </div>
@@ -72,7 +73,7 @@
     </div>
 
     <div id="tool-combine" class="tool-content active">
-        <p>上傳 6 張獨立圖片，合成 3x2 大圖並預覽</p>
+        <p>上傳 6 張圖片，合成 3x2 高清大圖 (支援 4096 規格)</p>
         <div class="grid-inputs">
             <div class="upload-card"><span class="label-name">DN (下)</span><input type="file" onchange="loadSingle(this, 3)"></div>
             <div class="upload-card"><span class="label-name">UP (上)</span><input type="file" onchange="loadSingle(this, 2)"></div>
@@ -81,17 +82,26 @@
             <div class="upload-card"><span class="label-name">RT (右)</span><input type="file" onchange="loadSingle(this, 0)"></div>
             <div class="upload-card"><span class="label-name">FT (前)</span><input type="file" onchange="loadSingle(this, 5)"></div>
         </div>
+        <div style="margin-bottom: 20px;">
+            合併品質：
+            <select id="combine-res">
+                <option value="1024">1024x1024 (標準)</option>
+                <option value="2048">2048x2048 (清晰)</option>
+                <option value="4096" selected>4096x4096 (極致)</option>
+            </select>
+        </div>
         <button class="action-btn" onclick="downloadCombined()">🔥 下載 3x2 合成大圖</button>
     </div>
 
     <div id="tool-slice" class="tool-content">
-        <p>上傳一張 3x2 佈局圖（如 Minecraft 天空），自動拆分為 .tex 檔案</p>
+        <p>上傳 3x2 佈局圖，自動拆分為 6 個高清 .tex 檔案</p>
         <input type="file" id="slice-input" accept="image/*" onchange="processSlice(this)">
         <div style="margin-top: 20px;">
             輸出解析度：
-            <select id="res-select" style="padding: 10px; background: #333; color: white; border: none; border-radius: 5px;">
+            <select id="res-select">
                 <option value="1024">1024x1024</option>
                 <option value="2048">2048x2048</option>
+                <option value="4096" selected>4096x4096</option>
             </select>
             <button id="download-zip-btn" class="action-btn" style="width: auto; margin-left: 10px;" disabled>📦 下載 .tex 打包檔</button>
         </div>
@@ -109,7 +119,6 @@
 <script>
     function closeModal() { document.getElementById('welcome-modal').style.display = 'none'; }
 
-    // --- 3D 初始化 ---
     let scene, camera, renderer, cube, textures = Array(6).fill(null);
     const loader = new THREE.TextureLoader();
 
@@ -164,7 +173,7 @@
         if (combineImages.includes(null)) return alert("請傳滿 6 張圖！");
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d');
-        const size = 1024;
+        const size = parseInt(document.getElementById('combine-res').value);
         canvas.width = size * 3; canvas.height = size * 2;
         const drawOrder = [3, 2, 1, 4, 0, 5];
         let loadedCount = 0;
@@ -174,8 +183,8 @@
                 ctx.drawImage(img, (i % 3) * size, Math.floor(i / 3) * size, size, size);
                 if (++loadedCount === 6) {
                     const link = document.createElement('a');
-                    link.download = 'Pork_Skybox_Combined.png';
-                    link.href = canvas.toDataURL();
+                    link.download = 'Pork_Skybox_4096_Combined.jpg';
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
                     link.click();
                 }
             };
@@ -199,7 +208,7 @@
             names.forEach((name, i) => {
                 ctx.clearRect(0,0,size,size);
                 ctx.drawImage(img, (i%3)*(img.width/3), Math.floor(i/3)*(img.height/2), img.width/3, img.height/2, 0, 0, size, size);
-                const dataUrl = canvas.toDataURL('image/png');
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
                 sliceZipData.push({ name: name + '.tex', data: dataUrl });
                 loader.load(dataUrl, tex => {
                     cube.material[threeOrder[i]] = new THREE.MeshBasicMaterial({ map: tex });
@@ -216,7 +225,7 @@
         zip.generateAsync({type:"blob"}).then(c => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(c);
-            a.download = "Pork_Skybox_Tex_Pack.zip";
+            a.download = "Pork_Skybox_4096_Pack.zip";
             a.click();
         });
     };
