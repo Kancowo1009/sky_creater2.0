@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox 天空盒 6合1 合併工具</title>
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --bg: #121212;
+            --card: #1e1e1e;
+            --text: #e0e0e0;
+        }
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            text-align: center; 
+            padding: 20px;
+            margin: 0;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: auto; 
+            background: var(--card); 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7); 
+        }
+        h2 { color: var(--primary); margin-bottom: 5px; }
+        p { color: #888; margin-bottom: 30px; }
+
+        .grid-inputs { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+            margin-bottom: 30px; 
+        }
+        
+        .upload-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            transition: all 0.3s ease;
+        }
+        .upload-card:hover { 
+            border-color: var(--primary); 
+            transform: translateY(-3px);
+        }
+        
+        .label-name { 
+            font-weight: bold; 
+            margin-bottom: 12px; 
+            display: block; 
+            color: var(--primary);
+            font-size: 14px;
+        }
+        
+        input[type="file"] { 
+            width: 100%; 
+            font-size: 12px; 
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        .preview-slot {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid #444;
+            color: #444;
+            font-size: 12px;
+        }
+        .preview-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+        .controls { 
+            margin-top: 20px; 
+            padding-top: 25px; 
+            border-top: 1px solid #333; 
+        }
+        select { 
+            padding: 12px 20px; 
+            font-size: 16px; 
+            background: #333; 
+            color: white; 
+            border: none; 
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+        button { 
+            padding: 12px 30px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            border: none; 
+            cursor: pointer; 
+            background: linear-gradient(135deg, #007bff, #00d4ff);
+            color: white; 
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            transition: 0.2s;
+        }
+        button:hover { 
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.5);
+        }
+        button:active { transform: scale(0.98); }
+
+        canvas { display: none; }
+
+        .footer { margin-top: 30px; color: #555; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Roblox 天空盒合併工具 (6合1)</h2>
+    <p>將 6 張獨立面合成為 3x2 佈局大圖</p>
+
+    <div class="grid-inputs">
+        <div class="upload-card">
+            <span class="label-name">SKY512_DN (下方)</span>
+            <input type="file" id="img-dn" accept="image/*" onchange="handleFile(this, 'dn')">
+            <div class="preview-slot" id="prev-dn">尚未上傳</div>
+        </div>
+        <div class="upload-card">
+            <span class="label-name">SKY512_UP (上方)</span>
+            <input type="file" id="img-up" accept="image/*" onchange="handleFile(this, 'up')">
+            <div class="preview-slot" id="prev-up">尚未上傳</div>
+        </div>
+        <div class="upload-card">
+            <span class="label-name">SKY512_LF (左側)</span>
+            <input type="file" id="img-lf" accept="image/*" onchange="handleFile(this, 'lf')">
+            <div class="preview-slot" id="prev-lf">尚未上傳</div>
+        </div>
+        <div class="upload-card">
+            <span class="label-name">SKY512_BK (後方)</span>
+            <input type="file" id="img-bk" accept="image/*" onchange="handleFile(this, 'bk')">
+            <div class="preview-slot" id="prev-bk">尚未上傳</div>
+        </div>
+        <div class="upload-card">
+            <span class="label-name">SKY512_RT (右側)</span>
+            <input type="file" id="img-rt" accept="image/*" onchange="handleFile(this, 'rt')">
+            <div class="preview-slot" id="prev-rt">尚未上傳</div>
+        </div>
+        <div class="upload-card">
+            <span class="label-name">SKY512_FT (前方)</span>
+            <input type="file" id="img-ft" accept="image/*" onchange="handleFile(this, 'ft')">
+            <div class="preview-slot" id="prev-ft">尚未上傳</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <label style="margin-right: 10px;">單面解析度：</label>
+        <select id="size-select">
+            <option value="1024">1024 x 1024</option>
+            <option value="2048">2048 x 2048</option>
+            <option value="4096">4096 x 4096</option>
+        </select>
+        <button onclick="combineImages()">開始合成並下載</button>
+    </div>
+
+    <canvas id="final-canvas"></canvas>
+    
+    <div class="footer">
+        * 注意：4096 規格合成後寬度將達 12K，處理時間較長請耐心等待。
+    </div>
+</div>
+
+<script>
+    const images = { dn: null, up: null, lf: null, bk: null, rt: null, ft: null };
+
+    function handleFile(input, side) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                images[side] = img;
+                const prevDiv = document.getElementById('prev-' + side);
+                prevDiv.innerHTML = '';
+                const thumb = new Image();
+                thumb.src = e.target.result;
+                prevDiv.appendChild(thumb);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function combineImages() {
+        const sides = ['dn', 'up', 'lf', 'bk', 'rt', 'ft'];
+        const missing = sides.filter(s => !images[s]);
+
+        if (missing.length > 0) {
+            alert('請上傳完整 6 張圖片後再進行合成！');
+            return;
+        }
+
+        const singleSize = parseInt(document.getElementById('size-select').value);
+        const canvas = document.getElementById('final-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 設定畫布：寬度 3 倍，高度 2 倍
+        canvas.width = singleSize * 3;
+        canvas.height = singleSize * 2;
+
+        // 高品質渲染設定
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // 依照 3x2 佈局繪製
+        // 第一排 (y=0)
+        ctx.drawImage(images.dn, 0, 0, singleSize, singleSize);
+        ctx.drawImage(images.up, singleSize, 0, singleSize, singleSize);
+        ctx.drawImage(images.lf, singleSize * 2, 0, singleSize, singleSize);
+        
+        // 第二排 (y=singleSize)
+        ctx.drawImage(images.bk, 0, singleSize, singleSize, singleSize);
+        ctx.drawImage(images.rt, singleSize, singleSize, singleSize, singleSize);
+        ctx.drawImage(images.ft, singleSize * 2, singleSize, singleSize, singleSize);
+
+        // 下載處理
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `Skybox_Combined_${singleSize}px.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            alert('圖片太大，瀏覽器無法下載。建議降低解析度至 2048。');
+            console.error(err);
+        }
+    }
+</script>
+
+</body>
+</html>
