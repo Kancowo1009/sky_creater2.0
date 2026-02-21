@@ -7,20 +7,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root { --primary: #00d4ff; --bg: #0b0b0b; --card: #181818; --text: #ffffff; --danger: #ff4444; }
-        body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 20px; }
+        body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: auto; background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        /* 初始彈窗樣式 */
+        .lang-bar { text-align: right; margin-bottom: 15px; }
+        #lang-select { background: #222; color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
         #welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--card); padding: 40px; border-radius: 20px; border: 2px solid var(--primary); max-width: 600px; text-align: left; }
         .modal-content h2 { color: var(--primary); text-align: center; margin-top: 0; }
         .modal-content li { margin-bottom: 15px; line-height: 1.6; font-size: 16px; }
 
-        /* 3D 預覽區域 */
-        #preview-3d-container { width: 100%; height: 450px; background: #000; border-radius: 10px; margin-bottom: 25px; overflow: hidden; position: relative; border: 2px solid #333; }
-        .preview-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+        #preview-3d-container { width: 100%; height: 450px; background: #000; border-radius: 10px; margin-bottom: 25px; overflow: hidden; position: relative; border: 2px solid #333; cursor: grab; }
+        #preview-3d-container:active { cursor: grabbing; }
+        .preview-label { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; font-size: 12px; pointer-events: none; }
 
-        /* 頁籤 */
         .tabs { display: flex; justify-content: center; margin-bottom: 20px; gap: 10px; }
         .tab-btn { padding: 12px 25px; background: #333; border: none; color: white; cursor: pointer; border-radius: 5px; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); font-weight: bold; color: #000; }
@@ -34,46 +35,53 @@
         
         button.action-btn { padding: 15px 35px; background: var(--primary); border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; color: #000; transition: 0.3s; width: 100%; max-width: 400px; }
         button.action-btn:hover { filter: brightness(1.2); transform: translateY(-2px); }
-        button:disabled { background: #444; cursor: not-allowed; }
+        button:disabled { background: #444; cursor: not-allowed; color: #777; }
         
-        /* 豬肉系列大字連結 */
         .notice-box { margin-top: 40px; padding: 30px; border: 5px solid var(--danger); border-radius: 15px; background: rgba(255, 68, 68, 0.05); }
         .notice-title { font-size: 42px; color: var(--danger); font-weight: 900; display: block; margin-bottom: 20px; }
         .notice-link { font-size: 36px; color: white; background: var(--danger); text-decoration: none; display: block; margin: 15px 0; padding: 20px; border-radius: 12px; font-weight: bold; transition: 0.3s; }
         .notice-link:hover { background: #cc0000; transform: scale(1.03); }
 
         canvas { display: none; }
-        select { padding: 10px; background: #333; color: white; border: 1px solid var(--primary); border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="welcome-modal">
     <div class="modal-content">
-        <h2>🛠️ 製作教學與規範 (4096支援版)</h2>
+        <h2 data-i18n="welcome_h2">🛠️ 製作教學與規範 (4096支援版)</h2>
         <ul>
-            <li><strong>第一部分：</strong> Roblox 天空由六個面組成。本工具目前支援最高 <strong>4096x4096</strong> 高清輸出。</li>
-            <li><strong>第二部分：</strong> 檔案命名系統會自動處理為 <code>sky512_dn.tex</code>。</li>
-            <li><strong>注意：</strong> 使用 4096 高清圖會增加遊戲載入負擔，建議電腦配備較好者使用。</li>
+            <li data-i18n="welcome_l1"><strong>第一部分：</strong> Roblox 天空由六個面組成。目前支援最高 4096 高清輸出。</li>
+            <li data-i18n="welcome_l2"><strong>第二部分：</strong> 檔案命名系統會自動處理為 sky512_dn.tex。</li>
+            <li data-i18n="welcome_l3"><strong>注意：</strong> 使用 4096 圖檔會增加負擔，建議電腦配備較好者使用。</li>
         </ul>
-        <button class="action-btn" onclick="closeModal()" style="width: 100%;">我明白了，開始製作</button>
+        <button class="action-btn" onclick="closeModal()" style="width: 100%;" data-i18n="welcome_btn">我明白了，開始製作</button>
     </div>
 </div>
 
 <div class="container">
-    <h2>🐷 Roblox 天空盒全能工具鏈</h2>
+    <div class="lang-bar">
+        <select id="lang-select" onchange="changeLanguage(this.value)">
+            <option value="zh">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+        </select>
+    </div>
+
+    <h2 data-i18n="title">🐷 Roblox 天空盒全能工具鏈</h2>
     
     <div id="preview-3d-container">
-        <div class="preview-label">3D 即時視角 (拖動滑鼠旋轉)</div>
+        <div class="preview-label" data-i18n="preview_label">3D 即時視角 (拖動滑鼠旋轉)</div>
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('combine')">6張圖合併</button>
-        <button class="tab-btn" onclick="switchTab('slice')">單張圖裁切</button>
+        <button id="tab-btn-combine" class="tab-btn active" onclick="switchTab('combine')" data-i18n="tab_combine">6張圖合併</button>
+        <button id="tab-btn-slice" class="tab-btn" onclick="switchTab('slice')" data-i18n="tab_slice">單張圖裁切</button>
     </div>
 
     <div id="tool-combine" class="tool-content active">
-        <p>上傳 6 張圖片，合成 3x2 高清大圖 (支援 4096 規格)</p>
+        <p data-i18n="combine_desc">上傳 6 張圖片，合成 3x2 高清大圖 (支援 4096 規格)</p>
         <div class="grid-inputs">
             <div class="upload-card"><span class="label-name">DN (下)</span><input type="file" onchange="loadSingle(this, 3)"></div>
             <div class="upload-card"><span class="label-name">UP (上)</span><input type="file" onchange="loadSingle(this, 2)"></div>
@@ -83,43 +91,140 @@
             <div class="upload-card"><span class="label-name">FT (前)</span><input type="file" onchange="loadSingle(this, 5)"></div>
         </div>
         <div style="margin-bottom: 20px;">
-            合併品質：
+            <span data-i18n="quality_label">合併品質：</span>
             <select id="combine-res">
                 <option value="1024">1024x1024 (標準)</option>
                 <option value="2048">2048x2048 (清晰)</option>
                 <option value="4096" selected>4096x4096 (極致)</option>
             </select>
         </div>
-        <button class="action-btn" onclick="downloadCombined()">🔥 下載 3x2 合成大圖</button>
+        <button class="action-btn" onclick="downloadCombined()" data-i18n="btn_download_all">🔥 下載 3x2 合成大圖</button>
     </div>
 
     <div id="tool-slice" class="tool-content">
-        <p>上傳 3x2 佈局圖，自動拆分為 6 個高清 .tex 檔案</p>
+        <p data-i18n="slice_desc">上傳 3x2 佈局圖，自動拆分為 6 個高清 .tex 檔案</p>
         <input type="file" id="slice-input" accept="image/*" onchange="processSlice(this)">
         <div style="margin-top: 20px;">
-            輸出解析度：
+            <span data-i18n="output_res">輸出解析度：</span>
             <select id="res-select">
                 <option value="1024">1024x1024</option>
                 <option value="2048">2048x2048</option>
                 <option value="4096" selected>4096x4096</option>
             </select>
-            <button id="download-zip-btn" class="action-btn" style="width: auto; margin-left: 10px;" disabled>📦 下載 .tex 打包檔</button>
+            <button id="download-zip-btn" class="action-btn" style="width: auto; margin-left: 10px;" disabled data-i18n="btn_download_zip">📦 下載 .tex 打包檔</button>
         </div>
     </div>
 
     <div class="notice-box">
-        <span class="notice-title">⚠️ 下載前請務必加入 ⚠️</span>
-        <a href="https://discord.gg/Veh52vVQ6a" class="notice-link" target="_blank">點我加入：豬肉幫</a>
-        <a href="https://discord.gg/WYMqm7REcT" class="notice-link" target="_blank">點我加入：豬肉舖</a>
+        <span class="notice-title" data-i18n="notice_title">⚠️ 下載前請務必加入 ⚠️</span>
+        <a href="https://discord.gg/Veh52vVQ6a" class="notice-link" target="_blank" data-i18n="join_gang">點我加入：豬肉幫</a>
+        <a href="https://discord.gg/WYMqm7REcT" class="notice-link" target="_blank" data-i18n="join_shop">點我加入：豬肉舖</a>
     </div>
 
     <canvas id="main-canvas"></canvas>
 </div>
 
 <script>
+    const i18n = {
+        zh: {
+            title: "🐷 Roblox 天空盒全能工具鏈",
+            welcome_h2: "🛠️ 製作教學與規範 (4096支援版)",
+            welcome_l1: `<strong>第一部分：</strong> Roblox 天空由六個面組成。支援最高 <strong>4096x4096</strong> 高清輸出。`,
+            welcome_l2: `<strong>第二部分：</strong> 檔案命名系統會自動處理為 <code>sky512_dn.tex</code>。`,
+            welcome_l3: `<strong>注意：</strong> 使用 4096 圖檔會增加負擔，建議電腦配備較好者使用。`,
+            welcome_btn: "我明白了，開始製作",
+            preview_label: "3D 即時視角 (拖動滑鼠旋轉)",
+            tab_combine: "6張圖合併",
+            tab_slice: "單張圖裁切",
+            combine_desc: "上傳 6 張圖片，合成 3x2 高清大圖 (支援 4096 規格)",
+            slice_desc: "上傳 3x2 佈局圖，自動拆分為 6 個高清 .tex 檔案",
+            quality_label: "合併品質：",
+            output_res: "輸出解析度：",
+            btn_download_all: "🔥 下載 3x2 合成大圖",
+            btn_download_zip: "📦 下載 .tex 打包檔",
+            notice_title: "⚠️ 下載前請務必加入 ⚠️",
+            join_gang: "點我加入：豬肉幫",
+            join_shop: "點我加入：豬肉舖",
+            alert_fill: "請傳滿 6 張圖！"
+        },
+        en: {
+            title: "🐷 Roblox Skybox Tool",
+            welcome_h2: "🛠️ Tutorial & Rules (4096 HD)",
+            welcome_l1: `<strong>Part 1:</strong> Roblox skybox has 6 faces. Supports up to <strong>4096x4096</strong> HD.`,
+            welcome_l2: `<strong>Part 2:</strong> Files are named <code>sky512_dn.tex</code>.`,
+            welcome_l3: `<strong>Note:</strong> 4096 HD increases load. High-end PC recommended.`,
+            welcome_btn: "I Understand",
+            preview_label: "3D Preview (Drag to Rotate)",
+            tab_combine: "Combine 6 Images",
+            tab_slice: "Slice Single Image",
+            combine_desc: "Create a 3x2 HD master image from 6 images.",
+            slice_desc: "Slice a 3x2 layout into 6 .tex files.",
+            quality_label: "Quality:",
+            output_res: "Resolution:",
+            btn_download_all: "🔥 Download 3x2 Combined",
+            btn_download_zip: "📦 Download .tex Pack",
+            notice_title: "⚠️ JOIN US BEFORE DOWNLOAD ⚠️",
+            join_gang: "Join: Pork Gang",
+            join_shop: "Join: Pork Shop",
+            alert_fill: "Please upload all 6 images!"
+        },
+        ja: {
+            title: "🐷 Roblox スカイボックスツール",
+            welcome_h2: "🛠️ チュートリアル (4096対応)",
+            welcome_l1: `<strong>パート1：</strong> Robloxの空は6面構成。最大 <strong>4096x4096</strong> HD対応。`,
+            welcome_l2: `<strong>パート2：</strong> 命名は自動的に <code>sky512_dn.tex</code> になります。`,
+            welcome_l3: `<strong>注意：</strong> 4096は負荷が高いです。ハイスペックPC推奨。`,
+            welcome_btn: "了解しました",
+            preview_label: "3Dプレビュー (回転可能)",
+            tab_combine: "6枚結合",
+            tab_slice: "1枚切り出し",
+            combine_desc: "6枚から 3x2 HD画像を作成します。",
+            slice_desc: "3x2 画像を 6つの .tex に分割します。",
+            quality_label: "品質：",
+            output_res: "解像度：",
+            btn_download_all: "🔥 結合画像をダウンロード",
+            btn_download_zip: "📦 .tex パックをダウンロード",
+            notice_title: "⚠️ ダウンロード前に参加 ⚠️",
+            join_gang: "参加：豚肉組",
+            join_shop: "參加：豚肉店",
+            alert_fill: "6枚すべて選択してください！"
+        },
+        ko: {
+            title: "🐷 로블록스 스카이박스 툴",
+            welcome_h2: "🛠️ 제작 가이드 (4096 지원)",
+            welcome_l1: `<strong>1부:</strong> 6면 구성. 최대 <strong>4096x4096</strong> HD 출력을 지원합니다.`,
+            welcome_l2: `<strong>2부:</strong> 이름은 <code>sky512_dn.tex</code>로 처리됩니다.`,
+            welcome_l3: `<strong>주의:</strong> 4096은 고사양 PC를 권장합니다.`,
+            welcome_btn: "이해했습니다",
+            preview_label: "3D 미리보기 (회전 가능)",
+            tab_combine: "6장 합치기",
+            tab_slice: "이미지 자르기",
+            combine_desc: "6장을 3x2 HD 이미지로 합칩니다.",
+            slice_desc: "3x2 이미지를 6개 파일로 분할합니다.",
+            quality_label: "품질:",
+            output_res: "해상도:",
+            btn_download_all: "🔥 합성 이미지 다운로드",
+            btn_download_zip: "📦 .tex 파일 다운로드",
+            notice_title: "⚠️ 다운로드 전 필수 가입 ⚠️",
+            join_gang: "가입: 돼지고기 조직",
+            join_shop: "가입: 돼지고기 상점",
+            alert_fill: "6장을 모두 선택해주세요!"
+        }
+    };
+
+    function changeLanguage(lang) {
+        localStorage.setItem('pork_lang', lang);
+        const dict = i18n[lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) el.innerHTML = dict[key];
+        });
+        document.getElementById('lang-select').value = lang;
+    }
+
     function closeModal() { document.getElementById('welcome-modal').style.display = 'none'; }
 
-    let scene, camera, renderer, cube, textures = Array(6).fill(null);
+    let scene, camera, renderer, cube;
     const loader = new THREE.TextureLoader();
 
     function init3D() {
@@ -133,19 +238,19 @@
 
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         geometry.scale(-1, 1, 1);
-        const materials = Array(6).fill(new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        const materials = Array(6).fill().map(() => new THREE.MeshBasicMaterial({ color: 0x222222 }));
         cube = new THREE.Mesh(geometry, materials);
         scene.add(cube);
 
         let isDragging = false, mouseX = 0, mouseY = 0;
-        container.onmousedown = (e) => { isDragging = true; mouseX = e.clientX; mouseY = e.clientY; };
-        window.onmouseup = () => isDragging = false;
-        window.onmousemove = (e) => {
+        container.addEventListener('mousedown', (e) => { isDragging = true; mouseX = e.clientX; mouseY = e.clientY; });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             cube.rotation.y += (e.clientX - mouseX) * 0.005;
             cube.rotation.x += (e.clientY - mouseY) * 0.005;
             mouseX = e.clientX; mouseY = e.clientY;
-        };
+        });
         animate();
     }
 
@@ -153,7 +258,7 @@
 
     function switchTab(type) {
         document.querySelectorAll('.tab-btn, .tool-content').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.tab-btn[onclick*="${type}"]`).classList.add('active');
+        document.getElementById(`tab-btn-${type}`).classList.add('active');
         document.getElementById(`tool-${type}`).classList.add('active');
     }
 
@@ -163,32 +268,33 @@
         if (!file) return;
         const url = URL.createObjectURL(file);
         combineImages[index] = url;
-        loader.load(url, tex => {
+        loader.load(url, (tex) => {
             cube.material[index] = new THREE.MeshBasicMaterial({ map: tex });
             cube.material[index].needsUpdate = true;
         });
     }
 
     function downloadCombined() {
-        if (combineImages.includes(null)) return alert("請傳滿 6 張圖！");
+        const lang = document.getElementById('lang-select').value;
+        if (combineImages.includes(null)) return alert(i18n[lang].alert_fill);
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d');
         const size = parseInt(document.getElementById('combine-res').value);
         canvas.width = size * 3; canvas.height = size * 2;
         const drawOrder = [3, 2, 1, 4, 0, 5];
-        let loadedCount = 0;
-        drawOrder.forEach((urlIndex, i) => {
+        let loaded = 0;
+        drawOrder.forEach((urlIdx, i) => {
             const img = new Image();
             img.onload = () => {
                 ctx.drawImage(img, (i % 3) * size, Math.floor(i / 3) * size, size, size);
-                if (++loadedCount === 6) {
+                if (++loaded === 6) {
                     const link = document.createElement('a');
-                    link.download = 'Pork_Skybox_4096_Combined.jpg';
+                    link.download = 'Pork_Skybox_4096.jpg';
                     link.href = canvas.toDataURL('image/jpeg', 0.9);
                     link.click();
                 }
             };
-            img.src = combineImages[urlIndex];
+            img.src = combineImages[urlIdx];
         });
     }
 
@@ -210,8 +316,9 @@
                 ctx.drawImage(img, (i%3)*(img.width/3), Math.floor(i/3)*(img.height/2), img.width/3, img.height/2, 0, 0, size, size);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
                 sliceZipData.push({ name: name + '.tex', data: dataUrl });
-                loader.load(dataUrl, tex => {
+                loader.load(dataUrl, (tex) => {
                     cube.material[threeOrder[i]] = new THREE.MeshBasicMaterial({ map: tex });
+                    cube.material[threeOrder[i]].needsUpdate = true;
                 });
             });
             document.getElementById('download-zip-btn').disabled = false;
@@ -225,12 +332,15 @@
         zip.generateAsync({type:"blob"}).then(c => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(c);
-            a.download = "Pork_Skybox_4096_Pack.zip";
-            a.click();
+            a.download = "Pork_Skybox_Pack.zip"; a.click();
         });
     };
 
-    window.onload = init3D;
+    window.onload = () => {
+        init3D();
+        const savedLang = localStorage.getItem('pork_lang') || 'zh';
+        changeLanguage(savedLang);
+    };
 </script>
 </body>
 </html>
